@@ -7,8 +7,8 @@ Here are the steps I had to take that got everything working:
 1) Login to MySQL as root, create a new user for the Sqoop import, and grant privileges:
 
     mysql -u root -phadoop     
-    CREATE USER 'sqlimport'@'localhost' IDENTIFIED BY 'hadoop';
-    GRANT ALL PRIVILEGES ON movielens.* to 'sqlimport'@'localhost';
+    CREATE USER 'sqimport'@'localhost' IDENTIFIED BY 'hadoop';
+    GRANT ALL PRIVILEGES ON movielens.* to 'sqimport'@'localhost';
     exit
 
 2) As root in the linux shell, add a new user 'sqimport' and add them to the hadoop group.
