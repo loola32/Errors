@@ -1,0 +1,49 @@
+I was also receiving the "User null does not belong to hadoop" error on HDP 2.6.5, as well as being unable to grant permissions to ''@'localhost' in the database.
+
+There seems to be quite a big difference between what you have to do in HDP 2.6.5, compared to the process shown in the video for HDP 2.5.
+
+Here are the steps I had to take that got everything working:
+
+1) Login to MySQL as root, create a new user for the Sqoop import, and grant privileges:
+
+    mysql -u root -phadoop     
+    CREATE USER 'sqlimport'@'localhost' IDENTIFIED BY 'hadoop';
+    GRANT ALL PRIVILEGES ON movielens.* to 'sqlimport'@'localhost';
+    exit
+
+2) As root in the linux shell, add a new user 'sqimport' and add them to the hadoop group.
+
+    su root
+    adduser sqimport
+    usermod -a -G hadoop sqimport
+
+3) Still as root, we need to edit a value in hive-site.xml.
+
+    cd /usr/hdp/2.6.5.0-292/hive/conf
+    nano hive-site.xml
+
+4) Find the entry that looks like:
+
+    <name>hive.warehouse.subdir.inherit.perms</name>     
+    <value>true</value>
+
+5) Change the value to false, and save the file:
+
+    <name>hive.warehouse.subdir.inherit.perms</name>     
+    <value>false</value>
+
+6) Finally, run the sqoop command, adding in the login details for the sqimport user:
+
+    sqoop import --connect jdbc:mysql://localhost/movielens --driver com.mysql.jdbc.Driver --table movies -m 1 --username sqimport --password hadoop --hive-import
+
+
+
+After doing this, I still received the "java.lang.ClassNotFoundException: org.apache.atlas.sqoop.hook.SqoopHook" error, but the data is successfully imported into Hive.
+
+Some 'gotchas':
+
+1) If you received the error at any time, you need to go back into HDFS file viewer and delete the movies folder that exists there (it should just contain the _SUCCESS file with no data).  Otherwise the script will not run as it tells you that the movies directory already exists.
+
+2) I listed the steps I took in order that got things to work, but I'm not 100% sure if they are all necessary.  If the first Sqoop command works (without Hive import), then try performing steps 3-6 first to see if it fixes things before resorting to adding new users.
+
+Hope this is useful for someone!  If someone more knowledgable could explain 'why' this solution works in the comments, I would be super interested.
